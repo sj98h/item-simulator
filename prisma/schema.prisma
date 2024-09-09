@@ -8,26 +8,59 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ====계정=====
+// 유저 - 캐릭터 1:N
 model User {
   id           Int        @id @default(autoincrement())
   username     String     @unique
-  passwordHash String
+  password String
   characters   Character[]
+
+  @@map("User")
 }
 
+// ====캐릭터=====
+// 캐릭터 - 인벤토리 1:1
+// 장비 레벨 제한이 있으면 좋을 거같다
 model Character {
-  id        Int      @id @default(autoincrement())
-  name      String
-  level     Int
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  items     Item[]
+  id           Int         @id @default(autoincrement())
+  name         String
+  level        Int
+  money Int @default(10000)
+  health Int
+  power Int
+  userId       Int
+  user         User        @relation(fields: [userId], references: [id])
+  inventory    Inventory?  @relation(fields: [inventoryId], references: [id])
+  inventoryId  Int?        @unique // inventoryId에 @unique 추가
+
+  @@map("Character")
 }
 
+// ====아이템=====
 model Item {
   id          Int      @id @default(autoincrement())
   name        String
   stats       Json
-  characterId Int
-  character   Character @relation(fields: [characterId], references: [id])
+  inventoryId Int
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+
+  @@map("Item")
+}
+
+// ====인벤토리=====
+// 인벤토리 - 아이템 1:N
+// 캐릭터 - 인벤토리 1:1
+model Inventory {
+  id         Int        @id @default(autoincrement())
+  character  Character? @relation
+  items      Item[]
+
+  @@map("Inventory")
+}
+
+// ====장착 아이템=====
+// 장착한 아이템
+model Equipment {
+  id Int @id @default(autoincrement())
 }
