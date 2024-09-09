@@ -1,5 +1,6 @@
 # Logs
 
+app.js
 logs
 _.log
 npm-debug.log_
@@ -7,8 +8,6 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
-
-node_modules/
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 
