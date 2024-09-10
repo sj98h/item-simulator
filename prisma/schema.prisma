@@ -11,12 +11,12 @@ generator client {
 // ====계정=====
 // 유저 - 캐릭터 1:N
 model User {
-  id           Int        @id @default(autoincrement())
-  userId     String     @unique
-  password String
+  id         Int      @id @default(autoincrement())
+  userId     String   @unique
+  password   String
   creadtedAt DateTime @default(now())
 
-  characters   Character[]
+  characters Character[]
 
   @@map("User")
 }
@@ -25,24 +25,24 @@ model User {
 // 캐릭터 - 인벤토리 1:1
 // 장비 레벨 제한이 있으면 좋을 거같다
 model Character {
-  id           Int         @id @default(autoincrement())
-  name         String
-  level        Int
-  money Int @default(10000)
-  health Int @default(100)
-  power Int @default(10)
-  userId       Int
-  user         User        @relation(fields: [userId], references: [id])
-  inventory    Inventory?  @relation(fields: [inventoryId], references: [id])
-  inventoryId  Int?        @unique // inventoryId에 @unique 추가
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  level       Int @default(1)
+  money       Int        @default(10000)
+  health      Int        @default(100)
+  power       Int        @default(10)
+  userId      String
+  user        User       @relation(fields: [userId], references: [userId])
+  inventory   Inventory? @relation(fields: [inventoryId], references: [id])
+  inventoryId Int?       @unique
 
   @@map("Character")
 }
 
 // ====아이템=====
 model Item {
-  id          Int      @id @default(autoincrement())
-  name        String
+  itemCode    Int       @unique
+  name        String    @unique
   stats       Json
   inventoryId Int
   inventory   Inventory @relation(fields: [inventoryId], references: [id])
@@ -54,9 +54,9 @@ model Item {
 // 인벤토리 - 아이템 1:N
 // 캐릭터 - 인벤토리 1:1
 model Inventory {
-  id         Int        @id @default(autoincrement())
-  character  Character? @relation
-  items      Item[]
+  id        Int        @id @default(autoincrement())
+  character Character? @relation
+  items     Item[]
 
   @@map("Inventory")
 }
