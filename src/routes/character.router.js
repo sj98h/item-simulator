@@ -1,6 +1,5 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
-import jwt from "jsonwebtoken";
 import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
@@ -38,7 +37,7 @@ router.delete(
   authMiddleware,
   async (req, res, next) => {
     try {
-      const characterId = parseInt(req.params.id);
+      const characterId = +req.params.id;
       const userId = req.user.userId;
 
       // 캐릭터 존재 여부 확인

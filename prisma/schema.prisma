@@ -27,7 +27,7 @@ model User {
 model Character {
   id          Int        @id @default(autoincrement())
   name        String     @unique
-  level       Int @default(1)
+  level       Int        @default(1)
   money       Int        @default(10000)
   health      Int        @default(100)
   power       Int        @default(10)
@@ -44,8 +44,9 @@ model Item {
   itemCode    Int       @unique
   name        String    @unique
   stats       Json
-  inventoryId Int
-  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  itemPrice   Int
+  inventoryId Int?
+  inventory   Inventory? @relation(fields: [inventoryId], references: [id])
 
   @@map("Item")
 }
