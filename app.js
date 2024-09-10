@@ -7,9 +7,6 @@ import UsersRouter from "./routes/users.router.js";
 
 app.use(express.json());
 
-// Prisma Client 인스턴스 생성
-const prismaClient = new PrismaClient();
-
 // JWT 비밀 키
 const JWT_SECRET = process.env.JWT_SECRET; // 환경 변수에서 비밀 키 가져오기
 
