@@ -69,4 +69,67 @@ router.delete(
   }
 );
 
+// 캐릭터 조회
+router.get("/character", authMiddleware, async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+
+    const characters = await prisma.character.findMany({
+      select: { id: true, name: true },
+      where: { userId },
+    });
+
+    // 캐릭터 개수
+    const characterCount = characters.length;
+
+    res.status(200).json({
+      count: characterCount,
+      characters: characters.map((character) => ({
+        id: character.id,
+        name: character.name,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 캐릭터 상세 조회
+router.get(
+  "/character/:characterId",
+  authMiddleware,
+  async (req, res, next) => {
+    try {
+      const { characterId } = req.params;
+      const userId = req.user?.userId; // 로그인된 사용자 ID
+      const character = await prisma.character.findUnique({
+        where: { id: +characterId },
+      });
+
+      if (!character) {
+        return res.status(404).json({ message: "캐릭터를 찾을 수 없습니다." });
+      }
+
+      // 1. 비로그인 또는 다른 유저의 요청인 경우 name, health, power
+      if (!userId || userId !== character.userId) {
+        return res.status(200).json({
+          name: character.name,
+          health: character.health,
+          power: character.power,
+        });
+      }
+
+      // 2. 본인 유저의 요청인 경우 + money
+      return res.status(200).json({
+        name: character.name,
+        health: character.health,
+        power: character.power,
+        money: character.money,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 export default router;
