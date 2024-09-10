@@ -12,8 +12,10 @@ generator client {
 // 유저 - 캐릭터 1:N
 model User {
   id           Int        @id @default(autoincrement())
-  username     String     @unique
+  userId     String     @unique
   password String
+  creadtedAt DateTime @default(now())
+
   characters   Character[]
 
   @@map("User")
@@ -27,8 +29,8 @@ model Character {
   name         String
   level        Int
   money Int @default(10000)
-  health Int
-  power Int
+  health Int @default(100)
+  power Int @default(10)
   userId       Int
   user         User        @relation(fields: [userId], references: [id])
   inventory    Inventory?  @relation(fields: [inventoryId], references: [id])
