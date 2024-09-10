@@ -86,4 +86,22 @@ router.patch("/item/:itemCode", async (req, res, next) => {
   }
 });
 
+// 아이템 목록 조회
+router.get("/items", async (req, res, next) => {
+  try {
+    // 모든 아이템을 조회
+    const items = await prisma.item.findMany({
+      select: {
+        itemCode: true,
+        name: true,
+        itemPrice: true,
+      },
+    });
+
+    return res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
