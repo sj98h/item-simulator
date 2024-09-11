@@ -15,6 +15,6 @@ app.use(cookieParser());
 
 app.use("/api", [UsersRouter, CharacterRouter, ItemRouter]);
 
-app.listen(3000, () => {
-  console.log("서버가 3000 포트에서 실행되고 있습니다.");
+app.listen(5678, () => {
+  console.log("서버가 5678 포트에서 실행되고 있습니다.");
 });
