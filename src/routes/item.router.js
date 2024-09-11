@@ -1,6 +1,7 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
+import { Prisma } from "@prisma/client";
 
 const router = express.Router();
 
@@ -186,42 +187,47 @@ router.post(
       }
 
       // 트랜잭션 돈 차감 ~ 아이템 추가
-      await prisma.$transaction(async (prisma) => {
-        // 돈 차감
-        await prisma.character.update({
-          where: { id: +characterId },
-          data: { money: character.money - totalCost },
-        });
-
-        // 인벤 아이템 추가
-        for (let el of items) {
-          const existingItem = await prisma.item.findFirst({
-            where: { itemCode: el.itemCode },
+      await prisma.$transaction(
+        async (tx) => {
+          // 돈 차감
+          await tx.character.update({
+            where: { id: +characterId },
+            data: { money: character.money - totalCost },
           });
 
-          // 아이템이 이미 존재하면 수량만 업데이트
-          if (existingItem) {
-            await prisma.item.update({
+          // 인벤 아이템 추가
+          for (let el of items) {
+            const existingItem = await tx.item.findFirst({
               where: { itemCode: el.itemCode },
-              data: {
-                count: existingItem.count + el.count,
-              },
             });
-          } else {
-            // 아이템 없으면 새로 추가
-            await prisma.item.create({
-              data: {
-                itemCode: el.itemCode,
-                name: el.name,
-                itemPrice: el.itemPrice,
-                stats: el.stats,
-                count: el.count,
-                inventoryId: character.inventory.id, // 인벤토리에 추가
-              },
-            });
+
+            // 아이템이 이미 존재하면 수량만 업데이트
+            if (existingItem) {
+              await tx.item.update({
+                where: { itemCode: el.itemCode },
+                data: {
+                  count: existingItem.count + el.count,
+                },
+              });
+            } else {
+              // 아이템 없으면 새로 추가
+              await tx.item.create({
+                data: {
+                  itemCode: el.itemCode,
+                  name: el.name,
+                  itemPrice: el.itemPrice,
+                  stats: el.stats,
+                  count: el.count,
+                  inventoryId: character.inventory.id, // 인벤토리에 추가
+                },
+              });
+            }
           }
+        },
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
         }
-      });
+      );
 
       // 인벤토리 조회 API
       router.get(
