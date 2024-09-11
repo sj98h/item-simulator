@@ -2,7 +2,6 @@ import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import authMiddleware from "../middlewares/auth.middleware.js";
 import { Prisma } from "@prisma/client";
 import dotenv from "dotenv";
 
@@ -63,13 +62,11 @@ router.post("/sign-up", async (req, res, next) => {
       }
     );
 
-    return res
-      .status(201)
-      .json({
-        message: "회원가입이 완료되었습니다",
-        id: user.id,
-        userId: user.userId,
-      });
+    return res.status(201).json({
+      message: "회원가입이 완료되었습니다",
+      id: user.id,
+      userId: user.userId,
+    });
   } catch (err) {
     next(err);
   }

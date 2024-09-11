@@ -1,6 +1,7 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from "../middlewares/auth.middleware.js";
+import passMiddleware from "../middlewares/pass.middleware.js";
 
 const router = express.Router();
 
@@ -103,7 +104,7 @@ router.get("/character", authMiddleware, async (req, res, next) => {
 // 캐릭터 상세 조회
 router.get(
   "/character/:characterId",
-  authMiddleware,
+  passMiddleware,
   async (req, res, next) => {
     try {
       const { characterId } = req.params;
@@ -116,8 +117,8 @@ router.get(
         return res.status(404).json({ message: "캐릭터를 찾을 수 없습니다." });
       }
 
-      // 1. 비로그인 또는 다른 유저의 요청인 경우 name, health, power
-      if (!userId || userId !== character.userId) {
+      // 1. 다른 유저의 요청인 경우 name, health, power
+      if (userId !== character.userId) {
         return res.status(200).json({
           name: character.name,
           health: character.health,
