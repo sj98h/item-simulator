@@ -21,6 +21,13 @@ router.post("/character-create", authMiddleware, async (req, res, next) => {
       data: { name, userId },
     });
 
+    // 인벤토리 생성 후 캐릭터에 연결
+    await prisma.inventory.create({
+      data: {
+        character: { connect: { id: character.id } },
+      },
+    });
+
     return res.status(201).json({
       message: "생성이 완료되었습니다",
       id: character.id,

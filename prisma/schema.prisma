@@ -45,6 +45,7 @@ model Item {
   name        String    @unique
   stats       Json
   itemPrice   Int
+  count Int @default(1)
   inventoryId Int?
   inventory   Inventory? @relation(fields: [inventoryId], references: [id])
 

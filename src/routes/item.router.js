@@ -1,12 +1,13 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
+import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 // 아이템 생성
 router.post("/item-create", async (req, res, next) => {
   try {
-    const { itemCode, name, stats, itemPrice, inventoryId } = req.body;
+    const { itemCode, name, stats, itemPrice } = req.body;
 
     // 데이터 유효성 검사
     if (!itemCode || !name || !stats || !itemPrice) {
@@ -123,7 +124,7 @@ router.get("/item-list/:itemCode", async (req, res, next) => {
 
     // 아이템 없을 때
     if (!item) {
-      return res.status(404).json({ error: "아이템을 찾을 수 없습니다." });
+      return res.status(404).json({ message: "아이템을 찾을 수 없습니다." });
     }
 
     return res.status(200).json(item);
@@ -131,5 +132,103 @@ router.get("/item-list/:itemCode", async (req, res, next) => {
     next(err);
   }
 });
+
+// 아이템 구매
+/**
+ * 1. 캐릭터 확인
+ * 2. 구매할 아이템 가격 계산
+ * 3. 돈 있는지 체크
+ * 4. 인벤에 기존 아이템 있는지 체크
+ * 4-1 있으면 수량만 올리기
+ * 4-2 없으면 인벤토리에 아이템 추가
+ * 돈 차감 + 아이템 추가 트랜잭션 처리
+ */
+router.post(
+  "/purchase/:characterId",
+  authMiddleware,
+  async (req, res, next) => {
+    const { characterId } = req.params;
+    const items = req.body; // 구매할 아이템 배열
+
+    try {
+      // 캐릭터 조회
+      const character = await prisma.character.findFirst({
+        where: { id: +characterId },
+        include: { inventory: true }, // 인벤토리 같이 조회
+      });
+
+      if (!character) {
+        return res.status(404).json({ message: "캐릭터가 존재하지 않습니다." });
+      }
+
+      // 아이템 총 가격
+      let totalCost = 0;
+
+      for (const el of items) {
+        const itemDetail = await prisma.item.findFirst({
+          where: { itemCode: el.itemCode },
+          select: { itemPrice: true },
+        });
+
+        if (!itemDetail) {
+          return res.status(400).json({
+            error: `잘못된 아이템 코드입니다.`,
+          });
+        }
+
+        const itemPrice = itemDetail.itemPrice;
+        totalCost += itemPrice * el.count;
+      }
+
+      // 돈 없을 때 처리
+      if (character.money < totalCost) {
+        return res.status(400).json({ error: "구매할 돈이 부족합니다." });
+      }
+
+      // 트랜잭션 돈 차감 ~ 아이템 추가
+      await prisma.$transaction(async (prisma) => {
+        // 돈 차감
+        await prisma.character.update({
+          where: { id: +characterId },
+          data: { money: character.money - totalCost },
+        });
+
+        // 아이템 추가 및 수량 업데이트
+        for (let el of items) {
+          const existingItem = await prisma.item.findFirst({
+            where: { itemCode: el.itemCode },
+          });
+
+          // 아이템이 이미 존재하면 수량만 업데이트
+          if (existingItem) {
+            await prisma.item.update({
+              where: { itemCode: el.itemCode },
+              data: {
+                count: existingItem.count + el.count,
+                inventoryId: character.inventory.id,
+              },
+            });
+          } else {
+            // 아이템 없으면 새로 추가
+            await prisma.item.create({
+              data: {
+                itemCode: el.itemCode,
+                name: el.name,
+                itemPrice: el.itemPrice,
+                stats: el.stats,
+                count: el.count,
+                inventoryId: character.inventory.id, // 인벤토리에 추가
+              },
+            });
+          }
+        }
+      });
+
+      return res.status(200).json({ message: "구매 완료" });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;
