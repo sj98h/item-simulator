@@ -193,7 +193,7 @@ router.post(
           data: { money: character.money - totalCost },
         });
 
-        // 아이템 추가 및 수량 업데이트
+        // 인벤 아이템 추가
         for (let el of items) {
           const existingItem = await prisma.item.findFirst({
             where: { itemCode: el.itemCode },
@@ -205,7 +205,6 @@ router.post(
               where: { itemCode: el.itemCode },
               data: {
                 count: existingItem.count + el.count,
-                inventoryId: character.inventory.id,
               },
             });
           } else {
@@ -223,6 +222,49 @@ router.post(
           }
         }
       });
+
+      // 인벤토리 조회 API
+      router.get(
+        "/inventory/:characterId",
+        authMiddleware,
+        async (req, res, next) => {
+          try {
+            const userId = req.user.userId;
+            const { characterId } = req.params;
+            const character = await prisma.character.findFirst({
+              where: { id: +characterId },
+              include: { inventory: { include: { items: true } } }, // 인벤토리, 아이템 조회
+            });
+
+            // 다른 유저일 경우
+            if (userId !== character.userId)
+              return res.status(401).json({
+                message: "본인 캐릭터 인벤토리만 조회할 수 있습니다.",
+              });
+
+            if (!character) {
+              return res
+                .status(404)
+                .json({ error: "캐릭터가 존재하지 않습니다." });
+            }
+
+            // 인벤토리 아이템 반환 stats, itemPrice, inventoryId 제외
+            return res.status(200).json({
+              characterId: character.id,
+              inventory: {
+                id: character.inventory.id,
+                items: character.inventory.items.map(
+                  ({ stats, itemPrice, inventoryId, ...item }) => ({
+                    ...item,
+                  })
+                ),
+              },
+            });
+          } catch (err) {
+            next(err);
+          }
+        }
+      );
 
       return res.status(200).json({ message: "구매 완료" });
     } catch (err) {
