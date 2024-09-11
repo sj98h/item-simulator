@@ -53,7 +53,7 @@ router.post("/item-create", async (req, res, next) => {
 });
 
 // 아이템 수정 (name과 stats만)
-router.patch("/item/:itemCode", async (req, res, next) => {
+router.patch("/item-edit/:itemCode", async (req, res, next) => {
   const { itemCode } = req.params;
   const { name, stats } = req.body;
 
@@ -87,7 +87,7 @@ router.patch("/item/:itemCode", async (req, res, next) => {
 });
 
 // 아이템 목록 조회
-router.get("/items", async (req, res, next) => {
+router.get("/item-list", async (req, res, next) => {
   try {
     // 모든 아이템을 조회
     const items = await prisma.item.findMany({
@@ -99,6 +99,34 @@ router.get("/items", async (req, res, next) => {
     });
 
     return res.status(200).json(items);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 아이템 상세 조회
+router.get("/item-list/:itemCode", async (req, res, next) => {
+  const { itemCode } = req.params;
+
+  try {
+    const item = await prisma.item.findFirst({
+      where: {
+        itemCode: +itemCode,
+      },
+      select: {
+        itemCode: true,
+        name: true,
+        stats: true,
+        itemPrice: true,
+      },
+    });
+
+    // 아이템 없을 때
+    if (!item) {
+      return res.status(404).json({ error: "아이템을 찾을 수 없습니다." });
+    }
+
+    return res.status(200).json(item);
   } catch (err) {
     next(err);
   }
